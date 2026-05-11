@@ -4,9 +4,9 @@ import api from '@/lib/axios';
 import MenuCard from '@/components/customer/MenuCard';
 import MenuItemModal from '@/components/customer/MenuItemModal';
 import FloatingCart from '@/components/customer/FloatingCart';
-import { useCartStore } from '@/lib/store';
+import { useCartStore, useCustomerStore } from '@/lib/store';
 import { toast } from 'sonner';
-import { Coffee, Search, SlidersHorizontal } from 'lucide-react';
+import { Coffee, Search, SlidersHorizontal, User, Hash } from 'lucide-react';
 
 export default function HomePage() {
   const [menus, setMenus] = useState([]);
@@ -15,8 +15,19 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('');
   const [selectedMenu, setSelectedMenu] = useState(null);
   const { addItem } = useCartStore();
+  const { name, tableNumber, isReady, setName, setTableNumber, setReady } = useCustomerStore();
+
+  // Ambil parameter URL untuk prefill nomor meja
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tableParam = params.get('meja') || params.get('table');
+    if (tableParam && !tableNumber) {
+      setTableNumber(tableParam);
+    }
+  }, []);
 
   useEffect(() => {
+    if (!isReady) return;
     api.get('/menus')
       .then((res) => {
         setMenus(res.data);
@@ -26,13 +37,72 @@ export default function HomePage() {
       .catch(() => {
         setCategories(['Coffee', 'Non-Coffee', 'Food', 'Snack']);
       });
-  }, []);
+  }, [isReady]);
 
   const handleAddToCart = (item) => {
     addItem(item);
     toast.success(`${item.name} ditambahkan ke keranjang`);
   };
 
+  const handleStart = () => {
+    if (!name.trim() || !tableNumber.trim()) {
+      toast.error('Mohon isi nama dan nomor meja');
+      return;
+    }
+    setReady(true);
+  };
+
+  // Jika belum siap, tampilkan form input
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-amber-50 to-white dark:from-gray-950 dark:to-gray-900 px-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
+            <Coffee className="h-6 w-6 text-amber-600" /> Selamat Datang
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+            Silakan isi data untuk mulai memesan
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-semibold mb-1 block">Nama Kamu</label>
+              <div className="relative">
+                <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Nama"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-semibold mb-1 block">Nomor Meja</label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Nomor meja"
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-sm"
+                />
+              </div>
+            </div>
+            <button
+              onClick={handleStart}
+              className="w-full py-3 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 transition"
+            >
+              Mulai Pesan
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Tampilan menu (setelah ready)
   const filteredMenus = menus.filter((m) => {
     const matchCategory = activeCategory ? m.category_name === activeCategory : true;
     const matchSearch = m.name.toLowerCase().includes(search.toLowerCase());
@@ -46,10 +116,11 @@ export default function HomePage() {
           <Coffee className="h-8 w-8" /> Kopi Kita
         </h1>
         <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-          Pesan kopi favoritmu langsung dari meja
+          Pesan kopi favoritmu, {name} (Meja {tableNumber})
         </p>
       </section>
 
+      {/* Search & Filter */}
       <div className="max-w-7xl mx-auto px-4 mt-4 sticky top-14 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md py-3 rounded-xl shadow-sm">
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">
@@ -78,6 +149,7 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Menu Grid */}
       <div className="max-w-7xl mx-auto px-4 py-4">
         {filteredMenus.length === 0 ? (
           <div className="text-center py-20 text-gray-400">

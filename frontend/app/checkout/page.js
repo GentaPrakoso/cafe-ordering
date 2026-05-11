@@ -1,27 +1,19 @@
 'use client';
 import { useState } from 'react';
-import { useCartStore } from '@/lib/store';
+import { useCartStore, useCustomerStore } from '@/lib/store';
 import api from '@/lib/axios';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCartStore();
+  const { name, tableNumber } = useCustomerStore();
   const router = useRouter();
-  const [form, setForm] = useState({
-    customer_name: '',
-    table_number: '',
-    type: 'dine_in',
-    voucher_code: '',
-    payment_method: 'cash'
-  });
+  const [voucherCode, setVoucherCode] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
 
   if (items.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto p-4 text-center">
-        <p>Keranjang kosong, silakan pilih menu dulu.</p>
-      </div>
-    );
+    return <div className="p-4 text-center">Keranjang kosong</div>;
   }
 
   const subtotal = total();
@@ -32,51 +24,49 @@ export default function CheckoutPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.post('/orders', {
-        customer_name: form.customer_name,
-        table_number: form.table_number,
-        type: form.type,
+      const orderData = {
+        customer_name: name,
+        table_number: tableNumber,
+        type: 'dine_in',
         items: items.map(i => ({
           menu_id: i.menu_id,
           quantity: i.quantity,
           notes: i.notes
         })),
-        voucher_code: form.voucher_code || undefined
-      });
+        voucher_code: voucherCode || undefined
+      };
+      const { data } = await api.post('/orders', orderData);
+      // Create payment (cash / gateway)
       await api.post('/payments/create', {
         order_id: data.order_id,
-        method: form.payment_method
+        method: paymentMethod
       });
       clearCart();
       toast.success('Pesanan berhasil!');
       router.push(`/tracking/${data.order_id}`);
     } catch (err) {
-      toast.error('Gagal membuat pesanan, coba lagi.');
+      toast.error('Gagal membuat pesanan');
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Checkout</h1>
+      <h1 className="text-2xl font-bold mb-2">Checkout</h1>
+      <p className="text-sm text-gray-500 mb-4">
+        {name} - Meja {tableNumber}
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input required placeholder="Nama kamu" value={form.customer_name}
-          onChange={e => setForm({...form, customer_name: e.target.value})}
-          className="w-full border p-3 rounded-xl" />
-        <input required placeholder="Nomor meja" value={form.table_number}
-          onChange={e => setForm({...form, table_number: e.target.value})}
-          className="w-full border p-3 rounded-xl" />
-        <select value={form.type}
-          onChange={e => setForm({...form, type: e.target.value})}
-          className="w-full border p-3 rounded-xl">
-          <option value="dine_in">Dine In</option>
-          <option value="take_away">Take Away</option>
-        </select>
-        <input placeholder="Kode voucher (opsional)" value={form.voucher_code}
-          onChange={e => setForm({...form, voucher_code: e.target.value})}
-          className="w-full border p-3 rounded-xl" />
-        <select value={form.payment_method}
-          onChange={e => setForm({...form, payment_method: e.target.value})}
-          className="w-full border p-3 rounded-xl">
+        <input
+          placeholder="Kode voucher (opsional)"
+          value={voucherCode}
+          onChange={e => setVoucherCode(e.target.value)}
+          className="w-full border p-3 rounded-xl"
+        />
+        <select
+          value={paymentMethod}
+          onChange={e => setPaymentMethod(e.target.value)}
+          className="w-full border p-3 rounded-xl"
+        >
           <option value="cash">Tunai</option>
           <option value="qris">QRIS</option>
           <option value="transfer">Transfer</option>

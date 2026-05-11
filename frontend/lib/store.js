@@ -55,3 +55,13 @@ export const useCartStore = create((set, get) => ({
   clearCart: () => set({ items: [], cartOpen: false }),
   total: () => get().items.reduce((sum, i) => sum + (i.price * i.quantity), 0)
 }));
+
+export const useCustomerStore = create((set) => ({
+  name: '',
+  tableNumber: '',
+  isReady: false,
+  setName: (name) => set({ name }),
+  setTableNumber: (tableNumber) => set({ tableNumber }),
+  setReady: (isReady) => set({ isReady }),
+  reset: () => set({ name: '', tableNumber: '', isReady: false })
+}));
