@@ -1,4 +1,4 @@
-// File: C:\xampp\htdocs\cafe-ordering-system\frontend\app\layout.jsx
+// File: C:\xampp\htdocs\cafe-ordering-system\frontend\app\layout.js
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

@@ -25,6 +25,10 @@ export const useAuthStore = create((set) => ({
 
 export const useCartStore = create((set, get) => ({
   items: [],
+  cartOpen: false,
+  openCart: () => set({ cartOpen: true }),
+  closeCart: () => set({ cartOpen: false }),
+  toggleCart: () => set((s) => ({ cartOpen: !s.cartOpen })),
   addItem: (item) => {
     const items = get().items;
     const existing = items.find(i => i.menu_id === item.menu_id && i.notes === item.notes);
@@ -37,6 +41,7 @@ export const useCartStore = create((set, get) => ({
     } else {
       set({ items: [...items, item] });
     }
+    set({ cartOpen: true }); // otomatis buka keranjang
   },
   removeItem: (menu_id, notes) => {
     set({ items: get().items.filter(i => !(i.menu_id === menu_id && i.notes === notes)) });
@@ -47,6 +52,6 @@ export const useCartStore = create((set, get) => ({
       items: get().items.map(i => i.menu_id === menu_id && i.notes === notes ? { ...i, quantity } : i)
     });
   },
-  clearCart: () => set({ items: [] }),
+  clearCart: () => set({ items: [], cartOpen: false }),
   total: () => get().items.reduce((sum, i) => sum + (i.price * i.quantity), 0)
 }));

@@ -1,4 +1,4 @@
-// File: C:\xampp\htdocs\cafe-ordering-system\frontend\app\admin\orders\page.jsx
+// File: C:\xampp\htdocs\cafe-ordering-system\frontend\app\admin\orders\page.js
 import * as entry from '../../../../../app/admin/orders/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
